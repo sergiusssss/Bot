@@ -42,12 +42,11 @@ class TelegramBot:
                     callback_button = types.InlineKeyboardButton(text=net, callback_data="deepdream_net_" + net)
                     keyboard.add(callback_button)
                 self._user_bot.send_message(message.chat.id, "Please, choose a neural network", reply_markup=keyboard)
-                self._nets_users.new_net(message.from_user.id)
-                self._states_users[message.from_user.id] = 21
+                #self._nets_users.new_net(message.from_user.id)
+                #self._states_users[message.from_user.id] = 21
                 self._log.info("DeepDream (com) [" + str(message.from_user.id) + "]")
             except BaseException as e:
                 self._log.error("DeepDream command error (" + str(e.args) + ")")
-            pass
 
         @self._user_bot.message_handler(commands=['deepdream'])
         def handle_text(message):
@@ -56,7 +55,29 @@ class TelegramBot:
         @self._user_bot.callback_query_handler(func=lambda call: True)
         def callback_inline(call):
             pass
-            # if call.data[:14] == "deepdream_net_":
-            #     bot.deepdream_button_net(call)
-            # elif call.data[:16] == "deepdream_layer_":
-            #     bot.deepdream_button_layeer(call)
+            if call.data[:14] == "deepdream_net_":
+                try:
+                    if self._states_users[call.message.chat.id] == 21:
+                        self._nets_users.set_net(call.message.chat.id, call.data[14:])
+                        self._user_bot.edit_message_text(chat_id=call.message.chat.id,
+                                                         message_id=call.message.message_id, text=call.data[14:])
+                        layers = self._networks[self._nets_users.get_net(call.message.chat.id)].get_layers()
+
+                        keyboard = types.InlineKeyboardMarkup()
+                        for layer in layers:
+                            self._log.debug(layer)
+                            callback_button = types.InlineKeyboardButton(text=layer,
+                                                                                     callback_data="deepdream_layer_" + layer)
+                            keyboard.add(callback_button)
+                        self._user_bot.send_message(call.message.chat.id, "Please, choose layer level",
+                                                    reply_markup=keyboard)
+                        self._states_users[call.message.chat.id] = 22
+                except BaseException as e:
+                    self._log.error("DeepDream load net error (" + str(e.args) + ")")
+            elif call.data[:16] == "deepdream_layer_":
+                if self._states_users[call.message.chat.id] == 22:
+                    self._nets_users.set_layer(call.message.chat.id, str(call.data[16:]).replace(".", "/"))
+                    self._user_bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                                     text=call.data[16:])
+                    self._user_bot.send_message(call.message.chat.id, "Send your photo, please")
+                    self._states_users[call.message.chat.id] = 23
