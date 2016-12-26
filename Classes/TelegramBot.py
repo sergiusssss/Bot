@@ -3,6 +3,7 @@ from telebot import types
 from Classes.Settings import Settings
 from Classes.Logger import Logger
 from Classes.Status import Status
+from Classes.Networks import Networks
 
 
 class TelegramBot:
@@ -11,6 +12,7 @@ class TelegramBot:
         self._admin_bot = TeleBot(Settings.AdminBot.token)
         self._log = Logger(self._admin_bot, Settings.logger_name, Settings.AdminBot.id)
         self._statuses = Status(self._log)
+        self._networks = Networks(self._log, Settings.Networks.path_to_models)
         self._init_handlers()
 
     def start(self):
@@ -57,11 +59,11 @@ class TelegramBot:
             pass
             if call.data[:14] == "deepdream_net_":
                 try:
-                    if self._states_users[call.message.chat.id] == 21:
-                        self._nets_users.set_net(call.message.chat.id, call.data[14:])
+                    if self._statuses[call.message.chat.id].get_status() == 21:
+                        self._statuses[call.message.chat.id].set_net(call.data[14:])
                         self._user_bot.edit_message_text(chat_id=call.message.chat.id,
                                                          message_id=call.message.message_id, text=call.data[14:])
-                        layers = self._networks[self._nets_users.get_net(call.message.chat.id)].get_layers()
+                        layers = self._networks[self._statuses[call.message.chat.id].get_net()].get_layers()
 
                         keyboard = types.InlineKeyboardMarkup()
                         for layer in layers:
@@ -71,13 +73,13 @@ class TelegramBot:
                             keyboard.add(callback_button)
                         self._user_bot.send_message(call.message.chat.id, "Please, choose layer level",
                                                     reply_markup=keyboard)
-                        self._states_users[call.message.chat.id] = 22
+                        self._statuses[call.message.chat.id].set_status(22)
                 except BaseException as e:
                     self._log.error("DeepDream load net error (" + str(e.args) + ")")
             elif call.data[:16] == "deepdream_layer_":
-                if self._states_users[call.message.chat.id] == 22:
-                    self._nets_users.set_layer(call.message.chat.id, str(call.data[16:]).replace(".", "/"))
+                if self._statuses[call.message.chat.id].get_status() == 22:
+                    self._statuses[call.message.chat.id].set_layer(str(call.data[16:]).replace(".", "/"))
                     self._user_bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                                                      text=call.data[16:])
                     self._user_bot.send_message(call.message.chat.id, "Send your photo, please")
-                    self._states_users[call.message.chat.id] = 23
+                    self._statuses[call.message.chat.id].set_status(23)

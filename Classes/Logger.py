@@ -1,5 +1,6 @@
 import datetime
 import logging
+import sys
 from colorlog import ColoredFormatter
 
 
@@ -52,4 +53,4 @@ class Logger:
     def fatal(self, message):
         self._send_to_admin(message, "FATAL")
         self._log.fatal(message)
-
+        sys.exit()
