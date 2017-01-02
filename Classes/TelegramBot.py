@@ -8,12 +8,17 @@ from Classes.Networks import Networks
 
 class TelegramBot:
     def __init__(self):
-        self._user_bot = TeleBot(Settings.UserBot.token)
-        self._admin_bot = TeleBot(Settings.AdminBot.token)
-        self._log = Logger(self._admin_bot, Settings.logger_name, Settings.AdminBot.id)
-        self._statuses = Status(self._log)
-        self._networks = Networks(self._log, Settings.Networks.path_to_models)
-        self._init_handlers()
+        try:
+            self._user_bot = TeleBot(Settings.UserBot.token)
+            self._admin_bot = TeleBot(Settings.AdminBot.token)
+            self._log = Logger(self._admin_bot, Settings.logger_name, Settings.AdminBot.id, Settings.path_to_logs)
+            self._statuses = Status(self._log)
+            self._networks = Networks(self._log, Settings.Networks.path_to_models)
+            self._init_handlers()
+            self.start()
+            self._log.info("Bot is running!!")
+        except BaseException as e:
+            self._log.error("Bot is not running!!", e.args)
 
     def start(self):
         self._user_bot.polling(none_stop=True, interval=1)

@@ -2,6 +2,7 @@
 
 class Settings:
     logger_name = ""
+    path_to_logs = "Files/Logs"
 
     class AdminBot:
         token = "289349761:AAHSovQsmGnq1fvel5LyET9VZ6xaOEa9yPE"
@@ -46,5 +47,5 @@ class Settings:
         max_count = 4
 
     class Networks:
-        path_to_models = "files/models"
+        path_to_models = "Files/Models"
 
