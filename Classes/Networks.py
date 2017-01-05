@@ -29,6 +29,7 @@ class Net:
                                                    self._path + '/' + self._name + ".caffemodel",
                                                    mean=np.float32([104.0, 116.0, 122.0]),
                                                    channel_swap=(2, 1, 0))
+                    os.remove('tmp.prototxt')
                 except BaseException as e:
                     self._log.error("Model with parameters loading error", e.args)
             else:

@@ -37,7 +37,7 @@ class Settings:
                 content_type = "application/octet-stream"
 
     class Photo:
-        path = 'files/photo/'
+        path = 'Files/Photo/'
 
     class Mail:
         username = 'bot-telegram@mail.ru'
