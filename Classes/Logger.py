@@ -5,25 +5,27 @@ from colorlog import ColoredFormatter
 
 
 class Logger:
-    def __init__(self, admin, name, admin_id, path_to_log):
+    def __init__(self, admin, user, name, admin_id, path_to_log):
+
         self._admin = admin
+        self._user = user
         self._admin_id = admin_id
         self._log = logging.getLogger(name)
-        self._log.setLevel(logging.DEBUG)
+        self._log.setLevel(logging.INFO)
 
         self._formatter = ColoredFormatter(
-                "%(log_color)s%(levelname)-4s [%(asctime)s]:  %(message)s",
-                datefmt=None,
-                reset=True,
-                log_colors={
-                        'DEBUG':    'cyan',
-                        'INFO':     'green',
-                        'WARNING':  'yellow',
-                        'ERROR':    'red',
-                        'CRITICAL': 'red,bg_white',
-                },
-                secondary_log_colors={},
-                style='%')
+            "%(log_color)s%(levelname)-4s [%(asctime)s]:  %(message)s",
+            datefmt=None,
+            reset=True,
+            log_colors={
+                'DEBUG': 'cyan',
+                'INFO': 'green',
+                'WARNING': 'yellow',
+                'ERROR': 'red',
+                'CRITICAL': 'red,bg_white',
+            },
+            secondary_log_colors={},
+            style='%')
         self._ch = logging.StreamHandler()
         self._ch.setLevel(logging.DEBUG)
         self._ch.setFormatter(self._formatter)
@@ -40,8 +42,9 @@ class Logger:
     def _send_to_admin(self, message, level_name):
         try:
             string_error = "<b>" + level_name + "</b>\n" \
-                            "<pre>" + datetime.datetime.now().strftime("%d.%m.%Y %I:%M") + "</pre>\n"\
-                            "(<code>" + message + "</code>)"
+                                                "<pre>" + datetime.datetime.now().strftime(
+                "%d.%m.%Y %I:%M") + "</pre>\n" \
+                                    "(<code>" + message + "</code>)"
             self._admin.send_message(self._admin_id, string_error, parse_mode='HTML')
         except:
             self._log.debug("Can not send a message to admin! ")
@@ -55,7 +58,10 @@ class Logger:
     def warning(self, message, e="Unknown error!!!"):
         self._log.warning(message)
 
-    def error(self, message, e="Unknown error!!!"):
+    def error(self, message, chat_id=None, e="Unknown error!!!"):
+        if chat_id is not None:
+            self._user.send_message(chat_id, "Sorry, something went wrong. Pleas try again, "
+                                             "and if this problem persists, try later.")
         self._send_to_admin(message, "ERROR")
         self._log.error(message + "(" + str(e) + ")")
 
@@ -63,3 +69,9 @@ class Logger:
         self._send_to_admin(message, "FATAL")
         self._log.fatal(message + "(" + str(e) + ")")
         sys.exit()
+
+    def admin_info(self, message):
+        return self._admin.send_message(self._admin_id, message).message_id
+
+    def change_admin_info(self, message, message_id):
+        self._admin.edit_message_text(message, self._admin_id, message_id)

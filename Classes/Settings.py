@@ -1,5 +1,6 @@
 # coding: utf8
 
+
 class Settings:
     logger_name = ""
     path_to_logs = "Files/Logs"
