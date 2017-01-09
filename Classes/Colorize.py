@@ -1,3 +1,15 @@
+# coding: utf8
+import numpy as np
+import matplotlib.pyplot as plt
+import skimage.color as color
+import scipy.ndimage.interpolation as sni
+import caffe
+import os
+
+from modules.settings import Settings as sett
+from functions.otherFunctions.mail import sendMail
+
+
 class Colorization:
     def __init__(self, log, user, admin):
         self._log = log
