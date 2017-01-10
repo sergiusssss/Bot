@@ -8,12 +8,11 @@ import gc
 
 
 class DeepDream:
-    def __init__(self, log, user, admin, admin_id, photo_path, f):
+    def __init__(self, log, user, admin, photo_path, f):
         self._log = log
         self._user_bot = user
         self._admin_bot = admin
         self._send_mail = f
-        self._admin_id = admin_id
         self._photo_path = photo_path
 
     def start_deep_dream(self, mess, photo_name, net, end="conv2/3x3_reduce"):

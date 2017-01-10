@@ -15,6 +15,7 @@ from Classes.Status import Status
 from Classes.Networks import Networks
 from Classes.DeepDream import DeepDream
 from Classes.Processing import Processing
+from Classes.Colorize import Colorize
 
 
 class TelegramBot:
@@ -26,7 +27,8 @@ class TelegramBot:
             self._statuses = Status(self._log)
             self._processing = Processing(self._log)
             self._networks = Networks(self._log, Settings.Networks.path_to_models)
-            self._deepdream = DeepDream(self._log, self._user_bot, self._admin_bot, Settings.AdminBot.id, Settings.Photo.path, self._send_mail)
+            self._deepdream = DeepDream(self._log, self._user_bot, self._admin_bot, Settings.Photo.path, self._send_mail)
+            self._colorize = Colorize()
             self._init_handlers()
             self._log.admin_info("Bot is running!!")
             self._log.info("Bot is running!!")
