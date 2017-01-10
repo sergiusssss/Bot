@@ -4,10 +4,6 @@ import matplotlib.pyplot as plt
 import skimage.color as color
 import scipy.ndimage.interpolation as sni
 import caffe
-import os
-
-from modules.settings import Settings as sett
-from functions.otherFunctions.mail import sendMail
 
 
 class Colorize:
@@ -25,12 +21,11 @@ class Colorize:
             caffe.set_mode_cpu()
             (H_in, W_in) = net.blobs['data_l'].data.shape[2:]  # get input shape
             (H_out, W_out) = net.blobs['class8_ab'].data.shape[2:]  # get output shape
-            pts_in_hull = np.load('functions/colorizationPhoto/colorizationPhoto/resources/pts_in_hull.npy')  # load cluster centers
-            net.params['class8_ab'][0].data[:, :, 0, 0] = pts_in_hull.transpose(
-                (1, 0))  # populate cluster centers as 1x1 convolution kernel
+            pts_in_hull = np.load('Files/Other/ColorizationPhotoResourсes/pts_in_hull.npy')  # load cluster centers
+            net.params['class8_ab'][0].data[:, :, 0, 0] = pts_in_hull.transpose((1, 0))  # populate cluster centers as 1x1 convolution kernel
 
             self._log.change_admin_info("Load the original image [" + str(mess.from_user.id) + "].", id_mess)
-            img_rgb = caffe.io.load_image(sett.Photo.path + photo_name)
+            img_rgb = caffe.io.load_image(self._photo_path + photo_name)
             img_lab = color.rgb2lab(img_rgb)  # convert image to lab color space
             img_l = img_lab[:, :, 0]  # pull out L channel
             (H_orig, W_orig) = img_rgb.shape[:2]  # original image size
@@ -50,10 +45,10 @@ class Colorize:
             img_rgb_out = np.clip(color.lab2rgb(img_lab_out), 0, 1)  # convert back to rgb
 
             self._log.change_admin_info("Saving [" + str(mess.from_user.id) + "].", id_mess)
-            plt.imsave(sett.Photo.path + photo_name[:-4] + "_res", img_rgb_out);
+            plt.imsave(self._photo_path + photo_name[:-4] + "_res", img_rgb_out)
 
             self._log.change_admin_info("Sending [" + str(mess.from_user.id) + "].", id_mess)
-            image = open(sett.Photo.path + photo_name[:-4] + "_res.png", 'rb')
+            image = open(self._photo_path + photo_name[:-4] + "_res.png", 'rb')
             self._user_bot.send_chat_action(mess.from_user.id, "upload_photo")
             self._user_bot.send_photo(mess.from_user.id, image)
 
@@ -61,6 +56,8 @@ class Colorize:
             self._send_mail(mess, photo_name, photo_name[:-4] + "_res.png", 'Colorize')
 
             self._log.change_admin_info("Completed (colorize) [" + str(mess.from_user.id) + "]. ☺", id_mess)
+            self._log.info("Completed process (Colorize / " + str(mess.from_user.id) + ")", id_mess)
+            gc.collect()
         except BaseException as e:
             self._log.change_admin_info("Error (colorize) [" + str(mess.from_user.id) + "]. 😢", id_mess)
             self._log.error("Colorize [" + str(mess.from_user.id) + "] ", mess.from_user.id, e.args)

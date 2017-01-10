@@ -28,7 +28,7 @@ class TelegramBot:
             self._processing = Processing(self._log)
             self._networks = Networks(self._log, Settings.Networks.path_to_models)
             self._deepdream = DeepDream(self._log, self._user_bot, self._admin_bot, Settings.Photo.path, self._send_mail)
-            self._colorize = Colorize()
+            self._colorize = Colorize(self._log, self._user_bot, self._admin_bot, Settings.Photo.path, self._send_mail)
             self._init_handlers()
             self._log.admin_info("Bot is running!!")
             self._log.info("Bot is running!!")
@@ -106,7 +106,7 @@ class TelegramBot:
                 self._user_bot.send_message(message.from_user.id, "I don't know what to do 😕")
             else:
                 photo_name = self._download_photo(message)
-                if self._statuses[message.from_user.id].get_status() == 1:
+                if self._statuses[message.from_user.id].get_status() == 32:
                    self._colorize_function(message, photo_name)
                 elif self._statuses[message.from_user.id].get_status() == 23:
                     self._deepdream_function(message, photo_name)
@@ -126,13 +126,21 @@ class TelegramBot:
             self._log.error("DeepDream command error ", message.from_user.id, e.args)
 
     def _colorize_command(self, message):
-        pass
+        try:
+            keyboard = types.InlineKeyboardMarkup()
+            for net in self._networks.get_standart_keys():
+                callback_button = types.InlineKeyboardButton(text=net, callback_data="colorize_net_" + net)
+                keyboard.add(callback_button)
+            self._user_bot.send_message(message.chat.id, "Please, choose a neural network", reply_markup=keyboard)
+            self._statuses[message.chat.id].set_status(31)
+        except BaseException as e:
+            self._log.error("Colorize command error ", message.from_user.id, e.args)
 
     def _stop_command(self):
         self._processing.stop_all()
         self._log.warning("Bot is stopped!")
         self._log.admin_info("Bot is stopped!")
-        sys.exit()
+        #self._user_bot.stop_polling()
 
     def _stop_process_command(self, i):
         self._processing.stop_process(i)
@@ -170,6 +178,18 @@ class TelegramBot:
         except BaseException as e:
             self._log.error("Something went wrong with callback", call.message.from_user.id, e.args)
 
+    def _colorize_callback(self, call):
+        try:
+            if call.data[:13] == "colorize_net_":
+                if self._statuses[call.message.chat.id].get_status() == 31:
+                    self._statuses[call.message.chat.id].set_net(call.data[13:])
+                    self._user_bot.edit_message_text(chat_id=call.message.chat.id,
+                                                     message_id=call.message.message_id, text=call.data[13:])
+                    self._user_bot.send_message(call.message.chat.id, "Send your photo, please")
+                    self._statuses[call.message.chat.id].set_status(32)
+        except BaseException as e:
+            self._log.error("Something went wrong with callback", call.message.from_user.id, e.args)
+
     # functional
     def _deepdream_function(self, message, photo_name):
         try:
@@ -185,17 +205,16 @@ class TelegramBot:
             self._log.error("Something went wrong with deepdream starting", message.from_user.id, e.args)
 
     def _colorize_function(self, message, photo_name):
-        pass
-        # try:
-        #     p = mp.Process(target=self._colorize.startColorize, args=(message, photo_name + ".jpg",
-        #                                                               self._networks[
-        #                                                                   'colorization_v2'].get_standart()))
-        #     p.start()
-        # except BaseException as e:
-        #     self._user_bot.send_message(message.from_user.id, "Something went wrong 😢" + str(e.args))
-        # self._user_bot.send_message(message.from_user.id, "I'm working on it")
-        # self._log.info("Colorize [" + str(message.from_user.id) + "]")
-        # self._states_users[message.from_user.id] = 0
+        try:
+            args = (message,
+                                 photo_name + ".jpg",
+                                 self._networks.get_standart_net(
+                                 self._statuses[message.from_user.id].get_net()).get_model())
+            self._processing.new_process(self._colorize.start_colorize, args, "Colorize", message.from_user.id)
+            self._user_bot.send_message(message.from_user.id, "I'm working on it")
+            self._statuses[message.from_user.id].set_status(0)
+        except BaseException as e:
+            self._log.error("Something went wrong with colorize starting", message.from_user.id, e.args)
 
     def _weather_function(self, message):
         pass
@@ -241,4 +260,7 @@ class TelegramBot:
 
         @self._user_bot.callback_query_handler(func=lambda call: True)
         def callback_inline(call):
-            self._deepdream_callback(call)
+            if call.data[:9] == "deepdream":
+                self._deepdream_callback(call)
+            elif call.data[:8] == "colorize":
+                self._colorize_callback(call)
